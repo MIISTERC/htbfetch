@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+# ─── CONFIG ───────────────────────────────────────────────
+USER_ID=1111     # replace with your own id.
+API_URL="https://labs.hackthebox.com/api/v4/profile/$USER_ID"
+TMP_AVATAR="/tmp/htb_avatar.png"
+IMG_HEIGHT=30 # change as you like it !
+
+# ─── COLORS ───────────────────────────────────────────────
+BOLD="\e[1m"
+RESET="\e[0m"
+CYAN="\e[36m"
+GREEN="\e[32m"
+YELLOW="\e[33m"
+MAGENTA="\e[35m"
+DIM="\e[2m"
+
+# ─── FETCH PROFILE DATA ───────────────────────────────────
+json=$(curl -s "$API_URL")
+
+# ─── PARSE USING jq ───────────────────────────────────────
+name=$(echo "$json" | jq -r '.profile.name')
+sys_owns=$(echo "$json" | jq -r '.profile.system_owns')
+user_owns=$(echo "$json" | jq -r '.profile.user_owns')
+respects=$(echo "$json" | jq -r '.profile.respects')
+rank=$(echo "$json" | jq -r '.profile.rank')
+ranking=$(echo "$json" | jq -r '.profile.ranking')
+avatar_url=$(echo "$json" | jq -r '.profile.avatar')
+team_name=$(echo "$json" | jq -r '.profile.team.name')
+# ─── DOWNLOAD AVATAR ──────────────────────────────────────
+curl -s -o "$TMP_AVATAR" "$avatar_url"
+
+# ─── GENERATE IMAGE ───────────────────────────────────────
+image=$(catimg "$TMP_AVATAR" -H "$IMG_HEIGHT" -r 2)
+
+# ─── INFO LINES ───────────────────────────────────────────
+info_lines=(
+  "${BOLD}${CYAN}Hack The Box Profile${RESET}"
+  ""
+  "${BOLD}Username:${RESET} ${GREEN}${name}${RESET}"
+  "${BOLD}Rank:${RESET} ${YELLOW}${rank}${RESET}"
+  "${BOLD}Ranking:${RESET} ${MAGENTA}${ranking}${RESET}"
+  "${BOLD}System Owns:${RESET} ${GREEN}${sys_owns}${RESET}"
+  "${BOLD}User Owns:${RESET} ${GREEN}${user_owns}${RESET}"
+  "${BOLD}Respects:${RESET} ${CYAN}${respects}${RESET}"
+  "${BOLD}Team Name:${RESET} ${YELLOW}${team_name}${RESET}"
+  ""
+)
+
+# ─── COMBINE INTO FORMATTED OUTPUT ─────────────────────────
+info_text=$(printf "%s\n" "${info_lines[@]}")
+
+# Align image and text side by side
+paste -d' ' <(printf "%b\n" "$image") <(printf "%b\n" "$info_text")
